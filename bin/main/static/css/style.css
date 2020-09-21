@@ -1,0 +1,11 @@
+@charset "utf-8";
+
+td i::before {
+	display: inline-block;
+	margin-right: 8px;
+}
+
+.c-pointer {
+	cursor: pointer;
+}
+

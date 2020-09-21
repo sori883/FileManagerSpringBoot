@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/css/mdb.min.css">
+    <title th:text="#{app.title}">title</title>
+</head>
+<body>
+	<nav class="navbar navbar-dark default-color d-flex justify-content-between">
+		<div>
+			<a class="navbar-brand" href="/members/" th:text="#{app.title}">title</a>
+		</div>
+		<ul class="navbar-nav">
+			<li class="nav-item dropdown">
+	        <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-333" data-toggle="dropdown"
+	          aria-haspopup="true" aria-expanded="false">
+	          <i class="fas fa-user"></i>
+	        </a>
+	        <div class="dropdown-menu dropdown-menu-right dropdown-default"
+	          aria-labelledby="navbarDropdownMenuLink-333">
+	          <a class="dropdown-item" sec:authorize="hasRole('ADMIN')" href="/members/admin">ユーザ管理ページ</a>
+	          <a class="dropdown-item" href="/members/user">ファイル共有ページ</a>
+	          <a class="dropdown-item" th:href="@{/logout}">ログアウト</a>
+	        </div>
+		    </li>
+	    </ul>
+	</nav>
+	
+    <div class="container-fluid">
+		<div class="row mt-4">
+    		<div class="col-md-12">
+    			<div class="d-felx justify-content-around">
+	    			<div>
+						<a href="/members/user" class="btn btn-default btn-rounded mb-4">
+							ファイル共有(User)
+						</a>
+					</div>	
+					<div>
+						<a href="/members/admin" class="btn btn-default btn-rounded mb-4">
+							管理画面(Admin)
+						</a>
+					</div>
+				</div>
+    		</div>
+    	</div>
+    </div>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/css/mdb.min.css">
+    <title th:text="#{app.title}">title</title>
+</head>
+<body>
+<nav class="navbar navbar-dark default-color d-flex justify-content-between">
+  <div>
+    <span class="navbar-brand" th:text="#{app.title}">title</span>
+  </div>
+</nav>
+<div class="container-fluid">
+    <div class="row justify-content-center mt-4">
+        <div class="col">
+            <div class="alert alert-warning" role="alert">
+              <h1>403 Access Denied</h1>
+              <h5 class="alert-heading">アクセス拒否</h5>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <a th:href="@{/members/}">Home</a>
+    </footer>
+</div>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+</body>
+</html>

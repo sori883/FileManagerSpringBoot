@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/css/mdb.min.css">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <title th:text="#{app.title}">title</title>
+</head>
+<body>
+<nav class="navbar navbar-dark default-color d-flex justify-content-between">
+	<div>
+		<a class="navbar-brand" href="/members/" th:text="#{app.title}">title</a>
+	</div>
+	<ul class="navbar-nav">
+		<li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" id="navbarDropdownMenuLink-333" data-toggle="dropdown"
+          aria-haspopup="true" aria-expanded="false">
+          <i class="fas fa-user"></i>
+        </a>
+        <div class="dropdown-menu dropdown-menu-right dropdown-default"
+          aria-labelledby="navbarDropdownMenuLink-333">
+          <a class="dropdown-item" sec:authorize="hasRole('ADMIN')" href="/members/admin">ユーザ管理ページ</a>
+          <a class="dropdown-item" href="/members/user">ファイル共有ページ</a>
+          <a class="dropdown-item" th:href="@{/logout}">ログアウト</a>
+        </div>
+	    </li>
+    </ul>
+</nav>
+
+<div class="container-fluid">
+    <div id="alert-ok" class="alert alert-info" style="display: none;" role="alert">
+        <p>ファイルがアップロードされました</p>
+    </div>
+    <div class="row">
+   	<div class="col-md-12 mt-4 mb-4">
+    	<div class="d-flex justify-content-between align-items-end">
+			<h3>ドラッグ＆ドロップでファイルアップロード</h3>
+			<div class="text-right">
+				<button id="cdOneUp" class="btn btn-primary" disabled>1階層戻る</button>
+				<a id="createModalToggle" class="btn btn-secondary btn-rounded" data-toggle="modal" data-target="#createDirModal">
+					ディレクトリ作成
+				</a>
+			</div>
+		</div>
+		<div id="dragdroparea" style="min-height: 500px">
+		    <div>
+		    	<table class="table">
+ 					<thead class="bg-default white-text text-center">
+   				<tr>
+				    <th scope="col">名前</th>
+				    <th scope="col">サイズ</th>
+				    <th scope="col">作成日時</th>
+				    <th scope="col">ダウンロード</th>
+				    <th scope="col">編集</th>
+				    <th scope="col">削除</th>
+   				</tr>
+ 					</thead>
+ 					<tbody class="filearea">
+ 					</tbody>
+ 					</table>
+			</div>
+		</div>
+	</div>
+	</div>
+</div>
+
+<!-- createDirModal -->
+<div class="modal fade" id="createDirModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">ディレクトリ作成</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+      	<form method="POST" id="createDirForm" class="md-form mb-5">
+      	  <input name="path" type="hidden" id="createFormDirPath" class="form-control" value="">
+      	  <div class="md-form">
+        	 <input name="name" type="text" id="createFormDirname" class="form-control">
+        	 <label for="createFormDirname">ディレクトリ名</label>
+        	</div>
+        	<div class="md-form">
+        	<p class="mb-1">閲覧権限の設定</p>
+	        	<select name="authDir" class="custom-select custom-select-sm">
+				  <option value="0" selected>全員</option>
+				  <option value="1" sec:authorize="hasRole('ADMIN')">管理者のみ</option>
+	          </select>
+          </div>
+      	</form>
+      </div>
+      <div class="modal-footer d-flex justify-content-center">
+      	<button type="button" class="btn btn-primary" data-dismiss="modal">キャンセル</button>
+        <button id="createDirButton" form="createDirForm" type="submit" class="btn btn-secondary">作成</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- editDirModal -->
+<div class="modal fade" id="editDirModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">ディレクトリ編集</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <form method="POST" id="editDirForm" class="md-form mb-5">
+          <input name="id" type="hidden" id="editFormDirId" class="form-control" value="">
+          <div class="md-form">
+           <input name="name" type="text" id="editFormDirName" class="form-control" autofocus>
+           <label for="editFormDirName">ディレクトリ名</label>
+          </div>
+          <div class="md-form">
+	          <div sec:authorize="hasRole('ADMIN')">
+		          <p class="mb-1">閲覧権限の変更</p>
+		          <select name="authDir" class="custom-select custom-select-sm">
+		            <option value="0" selected>全員</option>
+		            <option value="1">管理者のみ</option>
+		          </select>
+	           </div>
+          </div>
+          <div class="md-form">
+          <div class="d-flex justify-content-between">
+            <p class="mb-1">ディレクト変更</p>
+            <p class="mb-1"><button type="button" class="btn btn-primary btn-sm cdChangeUp" disabled>1階層戻る</button></p>
+           </div>
+            <div class="changearea">
+				<div class="table-wrapper-scroll-y my-custom-scrollbar">
+				  <table class="table table-bordered mb-0 table-sm">
+				    <thead>
+				      <tr>
+				        <th>ディレクトリ</th>
+				        <th>選択</th>
+				      </tr>
+				    </thead>
+				    <tbody class="select-dir-area">
+				    </tbody>
+				  </table>
+				</div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer d-flex justify-content-center">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">キャンセル</button>
+        <button id="editDirButton" form="editDirForm" type="submit" class="btn btn-secondary">変更</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- editFileModal -->
+<div class="modal fade" id="editFileModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">ファイル名編集</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <form method="POST" id="editFileForm" class="md-form mb-5">
+          <input name="id" type="hidden" id="editFileid" class="form-control" value="">
+          <div class="md-form">
+           <input name="name" type="text" id="editFileName" class="form-control" autofocus>
+           <label for="editFileName">ファイル名</label>
+          </div>
+          <div class="d-flex justify-content-between">
+            <p class="mb-1">ディレクト変更</p>
+            <p class="mb-1"><button type="button" class="btn btn-primary btn-sm cdChangeUp" disabled>1階層戻る</button></p>
+           </div>
+          <div class="changearea">
+           <div class="table-wrapper-scroll-y my-custom-scrollbar">
+             <table class="table table-bordered mb-0 table-sm">
+               <thead>
+                 <tr>
+                   <th>ディレクトリ</th>
+                   <th>選択</th>
+                 </tr>
+               </thead>
+               <tbody class="select-dir-area">
+               </tbody>
+             </table>
+           </div>
+         </div>
+        </form>
+      </div>
+      <div class="modal-footer d-flex justify-content-center">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">キャンセル</button>
+        <button id="editFileButton" form="editFileForm" type="submit" class="btn btn-secondary">変更</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.10/js/mdb.min.js"></script>
+<script>
+/**
+ * ------------------------------------------------------------------------
+ * Constants
+ * ------------------------------------------------------------------------
+ */
+ 
+var uploadURL ="/members/upload/"; // ファイルアップロード用API
+
+var loadlHomeDirURL ="/members/loadlHomeDir"; // ホームディレクト取得用API
+var loadlHomeFileURL ="/members/loadlHomeFile"; // ホームファイル取得用API
+var loadlChildDirURL ="/members/loadChildDir/"; // 2階層以降のディレクトリ取得用API
+var loadlChildFileURL ="/members/loadChildFile/"; // 2階層以降のディレクトリ取得用API
+
+var createDirURL ="/members/createDir"; // 2階層以降のディレクトリ取得用API
+var delDirURL = "/members/delDir/" // ディレクトリ削除用URL
+var editDirURL = "/members/editDir/" // ディレクトリ編集用URL
+var delFileURL = "/members/delFile/" // ファイル削除用URL
+var editFileURL = "/members/editFile/" // ファイル編集用URL
+
+var dirLists = []; // dirを管理するstore
+var fileLists = []; // fileを管理するstore
+var dirChangeLists = []; // ディレクトリ変更用dirを管理するstore
+
+var currentPath = "0"; // 現在のディレクトリパスを管理するstore
+var currentChangePath = "0"; // ディレクトリ変更用の現在のディレクトリを管理するstore
+var changePath = "0"; // ディレクトリを変更するためのstore
+var selectRecord = ""; // 選択したユーザを管理するstore
+
+var filearea = $('.filearea') // .fileareaのDOM
+var selectDirArea = $('.select-dir-area') // ディレクトリ変更用のDOM
+
+
+
+/**
+ * ------------------------------------------------------------------------
+ * Document Ready
+ * ------------------------------------------------------------------------
+ */
+ 
+$(document).ready(function(){
+	// ディレクトとファイルを取得
+	loadHomeDir()
+	loadHomeFile()
+	
+	// ファイルアップロード関連のイベント
+    var obj = $("#dragdroparea");
+    obj.on('dragenter', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    });
+    obj.on('dragover', function (e) {
+         e.stopPropagation();
+         e.preventDefault();
+    });
+    obj.on('drop', function (e) {
+     e.preventDefault();
+     var files = e.originalEvent.dataTransfer.files;
+     _handleFileUpload(files);
+    });
+    $(document).on('dragenter', function (e){
+        e.stopPropagation();
+        e.preventDefault();
+    });
+    $(document).on('dragover', function (e){
+      e.stopPropagation();
+      e.preventDefault();
+    });
+    $(document).on('drop', function (e){
+        e.stopPropagation();
+        e.preventDefault();
+    });
+    
+    // ディレクトリ選択時にフォルダまたは、ファイルのidを取得する
+    $('body').on('click', '.dir-select', function(e){
+    	currentPath = currentPath === "0" ? $(this).data('id').toString() : currentPath.toString() + '-' +  $(this).data('id')
+    	loadChildDir()
+    });
+    
+    // ディレクトリ1階層上に戻るボタン
+    $('#cdOneUp').on('click', function(){
+    	if (currentPath.indexOf('-') !== -1) {
+    		pathIndex = currentPath.lastIndexOf('-')
+        	currentPath = currentPath.substring(0, pathIndex)
+        	loadChildDir()
+    	} else {
+    		currentPath = "0"
+    		loadHomeDir()
+    	}
+    })
+    
+    // modelが表示された時に、ディレクトリ作成Formに、現在のパスを設定する
+    $('#createDirModal').on('show.bs.modal', function () {
+    	$('#createFormDirPath').val(currentPath);
+    })
+	
+	// ディレクトリ作成フォームを実行
+	$('#createDirButton').on('click', function(e){
+		e.stopPropagation();
+    e.preventDefault();
+    
+    data = _parseJson($('#createDirForm').serializeArray())
+    createDir(data);
+    $('#createDirModal').modal('hide')
+	})
+	  
+  // ディレクトリの削除
+  $('body').on('click', '.del-dir', function(){
+    selectRecord = $(this).closest('tr').data('id');
+    delDir()
+  });
+  
+  // ディレクトリの編集
+  $('body').on('click', '.edit-dir', function(){
+    selectRecord = $(this).closest('tr').data('id');
+    // id格納
+    $('#editFormDirId').val(selectRecord);
+    // modalのinput nameに選択したファイルの名前を代入する
+    $('#editFormDirName').val($(this).closest('tr').data('name'))
+    _loaderChangeDir()
+  });
+   
+   // ディレクトリの編集を実行
+   $('#editDirButton').on('click', function(e){
+     e.stopPropagation();
+     e.preventDefault();
+     // TODO
+     data = _parseJson($('#editDirForm').serializeArray())
+     editDir(data);
+     $('#editDirModal').modal('hide')
+   })
+	
+	// ファイルの削除
+    $('body').on('click', '.del-file', function(){
+    	selectRecord = $(this).closest('tr').data('id');
+    	delFile()
+    });
+    
+    // ファイルの編集
+    $('body').on('click', '.edit-file', function(){
+      selectRecord = $(this).closest('tr').data('id');
+      // modalのinput hiddenに選択したファイルを格納する
+      $('#editFileid').val(selectRecord);
+      // modalのinput nameに選択したファイルの名前を代入する
+      $('#editFileName').val($(this).closest('tr').data('name'))
+      _loaderChangeDir()
+    });
+    
+    // ファイル名変更フォームを実行
+    $('#editFileButton').on('click', function(e){
+      e.stopPropagation();
+      e.preventDefault();
+      
+      data = _parseJson($('#editFileForm').serializeArray())
+      editFile(data);
+      $('#editFileModal').modal('hide')
+    })
+    
+    // ディレクトリ選択時にフォルダまたは、ファイルのidを取得する
+    $('body').on('click', '.dir-change-select', function(e){
+      currentChangePath = currentChangePath === "0" ? $(this).data('id').toString() : currentChangePath.toString() + '-' +  $(this).data('id')
+      loadChangeChildDir()
+    });
+    
+    // 編集modalのディレクトリ1階層上に戻るボタン
+    $('.cdChangeUp').on('click', function(){   	
+      if (currentChangePath.indexOf('-') !== -1) {
+        pathIndex = currentChangePath.lastIndexOf('-')
+        currentChangePath = currentChangePath.substring(0, pathIndex)
+        loadChangeChildDir()
+      } else {
+    	  currentChangePath = "0"
+        loadChangeHomeDir()
+      }
+    })
+    
+    // 移動先のディレクトリ選択ボタン
+    $('body').on('click', '.select-change-dir', function(e){
+    	$('.select-change-dir').removeClass('active')
+    	changePath = currentChangePath === "0" ? $(this).closest('tr').data('id') : currentChangePath + '-' +  $(this).closest('tr').data('id');
+    	$(this).addClass('active')
+    });
+    
+    
+});
+
+/**
+ * ------------------------------------------------------------------------
+ * AJAX
+ * ------------------------------------------------------------------------
+ */
+ 
+// ディレクトリ作成
+function createDir(data){
+	$.ajax({
+		url: createDirURL,
+		type: "POST",
+		contentType: "application/json",
+		processData: false,
+		datatype: 'json',
+		cache: false,
+		data: JSON.stringify(data),
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_loader()
+		}
+	});
+}
+
+// ディレクトリ削除
+function delDir(){
+	$.ajax({
+		url: delDirURL + selectRecord,
+		type: "GET",
+        contentType:false,
+        processData: false,
+        cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_loader()
+		}
+	});
+}
+
+// ディレクトリ編集
+function editDir(data){
+  $.ajax({
+    url: editDirURL + changePath,
+    type: "POST",
+    contentType: "application/json",
+    processData: false,
+    datatype: 'json',
+    cache: false,
+    data: JSON.stringify(data),
+    timeout: 30000,
+    success: function(result, textStatus, xhr) {
+      _loader()
+    }
+  });
+}
+
+// ファイル削除
+function delFile(){
+	$.ajax({
+		url: delFileURL + selectRecord,
+		type: "GET",
+        contentType:false,
+        processData: false,
+        cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_loader()
+		}
+	});
+}
+
+// ファイル編集
+function editFile(data){
+	if (changePath == "0") {
+		changePath = currentChangePath	
+	}
+	
+  $.ajax({
+    url: editFileURL + changePath,
+    type: "POST",
+    contentType: "application/json",
+    processData: false,
+    datatype: 'json',
+    cache: false,
+    data: JSON.stringify(data),
+    timeout: 30000,
+    success: function(result, textStatus, xhr) {
+      _loader()
+    }
+  });
+}
+
+
+// 2階層以降のディレクトリを取得
+function loadChildDir(){
+	$.ajax({
+		url: loadlChildDirURL + currentPath,
+		type: "GET",
+		contentType:false,
+		processData: false,
+		cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_renderDir(result)
+			// Dir取得後にChildFileを実行
+			loadChildFile()
+		}
+	});
+}
+
+// 2階層以降のファイルを取得
+function loadChildFile(){
+	$.ajax({
+		url: loadlChildFileURL + currentPath,
+		type: "GET",
+		contentType:false,
+		processData: false,
+		cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_renderFile(result)
+			$('#cdOneUp').prop('disabled', false)
+		}
+	});
+}
+
+// ファイルアップロード
+function sendFileToServer(formData, status){
+	$.ajax({
+      url: uploadURL + currentPath,
+      type: "POST",
+      contentType:false,
+      processData: false,
+      cache: false,
+      data: formData,
+      timeout: 30000,
+      success: function(result, textStatus, xhr) {
+        currentPath == "0" ? loadHomeDir() : loadChildDir()  
+
+        $('#alert-ok').fadeIn(300)
+        $('#alert-ok').delay(2500).fadeOut(300)
+      }
+    });
+}
+
+// ホームディレクト一覧表示
+function loadHomeDir(){
+	$.ajax({
+		url: loadlHomeDirURL,
+		type: "GET",
+		contentType:false,
+		processData: false,
+		cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_renderDir(result)
+			// Dir実行後Fileを取得
+			loadHomeFile()
+		}
+	});
+}
+
+
+// ホームファイル一覧表示
+function loadHomeFile(){
+	$.ajax({
+		url: loadlHomeFileURL,
+		type: "GET",
+		contentType:false,
+		processData: false,
+		cache: false,
+		timeout: 30000,
+		success: function(result, textStatus, xhr) {
+			_renderFile(result)
+			$('#cdOneUp').prop('disabled', true)
+		}
+	});
+}
+
+// ディレクトリ変更用のホームディレクト一覧表示
+function loadChangeHomeDir(){
+  $.ajax({
+    url: loadlHomeDirURL,
+    type: "GET",
+    contentType:false,
+    processData: false,
+    cache: false,
+    timeout: 30000,
+    success: function(result, textStatus, xhr) {
+    	_renderChangeDir(result)
+    	$('.cdChangeUp').prop('disabled', true)
+    }
+  });
+}
+
+//2階層以降のディレクトリを取得
+function loadChangeChildDir(){
+  $.ajax({
+    url: loadlChildDirURL + currentChangePath,
+    type: "GET",
+    contentType:false,
+    processData: false,
+    cache: false,
+    timeout: 30000,
+    success: function(result, textStatus, xhr) {
+    	_renderChangeDir(result)
+    	$('.cdChangeUp').prop('disabled', false)
+    }
+  });
+}
+
+
+/**
+ * ------------------------------------------------------------------------
+ * PRIVATE
+ * ------------------------------------------------------------------------
+ */
+
+// ファイルとディレクトリのロード用
+function _loader(){
+	if(currentPath == "0") {
+		loadHomeDir()
+	} else {
+		loadChildDir()
+	}
+}
+
+//ファイルとディレクトリのロード用(ディレクトリ変更用)
+function _loaderChangeDir(){
+	currentChangePath = currentPath.toString()
+	
+  if(currentChangePath == "0") {
+    loadChangeHomeDir()
+    $('.cdChangeUp').prop('disabled', true)
+  } else {
+    loadChangeChildDir()
+    $('.cdChangeUp').prop('disabled', false)
+  }
+}
+
+// フォルダ表示用（ディレクト変更）
+function _renderChangeDir(list){
+	dirChangeLists = list
+  $('.change-dir-list').remove();
+  
+	dirChangeLists.forEach(function(val) {
+	  if(val.id != selectRecord) {
+	    selectDirArea.append('<tr class="change-dir-list" data-id="'+val.id+'" data-name="'+val.name+'"><td class="c-pointer align-middle dir-change-select" data-id="'+val.id+'"><i class="fa-lg fas fa-folder"></i>'+val.name+'</td><td><button type="button" class="btn btn-secondary btn-sm select-change-dir">選択</button></td></tr>')
+	  }
+  });
+	if (currentChangePath == "0") {
+		selectDirArea.append('<tr class="change-dir-list" data-id="0" data-name="ホーム"><td class="c-pointer align-middle dir-change-select" data-id="0"><i class="fa-lg fas fa-folder"></i>ホームに移動</td><td><button type="button" class="btn btn-secondary btn-sm select-change-dir">選択</button></td></tr>')
+	}
+}
+
+// ファイル表示用
+function _renderFile(list){
+	fileLists = list
+	$('.file-list').remove();
+	fileLists.forEach(function(val) {
+		filearea.append('<tr class="file-list" data-id="'+val.id+'" data-name="'+val.virtualName+'"><td class="align-middle"><i class="fa-lg fas fa-file"></i>'+val.virtualName+'</td><td class="align-middle text-center">'+_byteToSize(val.size)+'</td><td class="align-middle text-center">'+val.createAt+'</td><td class="align-middle text-center"><a type="button" class="btn btn-secondary btn-sm"  href="/download/'+val.name+'" download="/download/'+val.name+'">ダウンロード</a></td><td class="align-middle text-center"><button type="button" class="btn btn-secondary btn-sm edit-file" data-toggle="modal" data-target="#editFileModal">編集</button></td><td class="align-middle text-center"><button type="button" class="btn btn-danger btn-sm del-file">削除</button></td></tr>')
+	})
+}
+
+// フォルダ表示用
+function _renderDir(list){
+	dirLists = list
+	$('.dir-list').remove();
+	
+	dirLists.forEach(function(val) {
+		filearea.append('<tr class="dir-list" data-id="'+val.id+'" data-name="'+val.name+'"><td class="c-pointer align-middle dir-select" data-id="'+val.id+'"><i class="fa-lg fas fa-folder"></i>'+val.name+'</td><td class="align-middle text-center">―</td><td class="align-middle text-center">'+val.createAt+'</td><td class="align-middle text-center">―</td><td class="align-middle text-center"><button type="button" class="btn btn-secondary btn-sm edit-dir" data-toggle="modal" data-target="#editDirModal">編集</button></td><td class="align-middle text-center"><button type="button" class="btn btn-danger btn-sm del-dir">削除</button></td></tr>')
+	});
+}
+
+// ファイルアップデート
+function _handleFileUpload(files, obj){
+	var fd = new FormData();
+	for (var i = 0; i < files.length; i++){
+		fd.append('files', files[i]);
+	}
+	sendFileToServer(fd,status);
+}
+
+// ファイルサイズ変換
+function _byteToSize(bytes){
+	if      (bytes >= 1073741824) { bytes = (bytes / 1073741824).toFixed(2) + " GB"; }
+	else if (bytes >= 1048576)    { bytes = (bytes / 1048576).toFixed(2) + " MB"; }
+	else if (bytes >= 1024)       { bytes = (bytes / 1024).toFixed(2) + " KB"; }
+	else if (bytes > 1)           { bytes = bytes + " bytes"; }
+	else if (bytes == 1)          { bytes = bytes + " byte"; }
+	else                          { bytes = "0 bytes"; }
+	return bytes;
+}
+
+// json整形
+function _parseJson(data){
+	var returnJson = {};
+	for (idx = 0; idx < data.length; idx++) {
+	  returnJson[data[idx].name] = data[idx].value
+	}
+	return returnJson;
+}
+</script>
+</body>
+</html>
